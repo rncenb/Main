@@ -181,13 +181,15 @@ function Library:CreateWindow(config)
 	-- Minimize
 	local minimizeBtn = Instance.new("TextButton")
 	minimizeBtn.Size = UDim2.new(0, 24, 0, 24)
-	minimizeBtn.Position = UDim2.new(0, -24, 0, 0)
-	minimizeBtn.BackgroundTransparency = 1
+	minimizeBtn.Position = UDim2.new(1, -28, 0, 5)
+	minimizeBtn.BackgroundColor3 = C.Button
+	minimizeBtn.BackgroundTransparency = 0.4
 	minimizeBtn.Text = "-"
 	minimizeBtn.TextColor3 = C.Text
 	minimizeBtn.Font = Enum.Font.GothamBold
 	minimizeBtn.TextSize = 18
-	minimizeBtn.Parent = contentArea
+	minimizeBtn.Parent = sidebar
+	Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 4)
 
 	-- Dragging
 	local dragging, dragInput, dragStart, startPos
@@ -215,6 +217,7 @@ function Library:CreateWindow(config)
 
 	-- === ELEMENT REGISTRY ===
 	local elements = {}
+	local searchBoxes = {}
 	local function register(el)
 		table.insert(elements, el)
 	end
@@ -248,6 +251,7 @@ function Library:CreateWindow(config)
 
 	-- === WINDOW ===
 	local Window = {}
+	Window.Theme = C
 	local firstTab = true
 	local activeTabBtn = nil
 
@@ -297,12 +301,13 @@ function Library:CreateWindow(config)
 			elseif t == "Slider" then
 				el.cont.BackgroundColor3 = C.Button
 				el.label.TextColor3 = C.Text
-				el.valLabel.TextColor3 = C.Text
+				el.valLabel.TextColor3 = C.Accent
 				el.fill.BackgroundColor3 = C.Accent
 			elseif t == "Dropdown" then
 				el.cont.BackgroundColor3 = C.Button
 				el.label.TextColor3 = C.Text
 				el.selLabel.TextColor3 = C.Text
+				if el.arrow then el.arrow.TextColor3 = C.Text end
 				if el.dropdown then el.dropdown.BackgroundColor3 = C.Button end
 			elseif t == "ColorPicker" then
 				el.cont.BackgroundColor3 = C.Button
@@ -313,6 +318,12 @@ function Library:CreateWindow(config)
 				el.keyBtn.BackgroundColor3 = C.InputBackground
 				el.keyBtn.TextColor3 = C.Text
 			end
+		end
+
+		for _, sb in pairs(searchBoxes) do
+			sb.BackgroundColor3 = C.InputBackground
+			sb.TextColor3 = C.Text
+			sb.PlaceholderColor3 = Color3.fromRGB(130, 130, 130)
 		end
 
 		for _, page in pairs(pagesFolder:GetChildren()) do
@@ -330,13 +341,17 @@ function Library:CreateWindow(config)
 	end
 
 	function Window:SaveTheme(name)
+		if type(writefile) ~= "function" then
+			Library:Notify({Text = "File API not supported", Duration = 3, Icon = "✗"})
+			return
+		end
 		local data = {}
 		for k, v in pairs(C) do
 			if type(v) == "Color3" then
 				data[k] = {R = v.R, G = v.G, B = v.B}
 			end
 		end
-		local ok, err = pcall(function()
+		local ok = pcall(function()
 			writefile("ProTheme_" .. name .. ".json", HttpService:JSONEncode(data))
 		end)
 		if ok then
@@ -345,6 +360,10 @@ function Library:CreateWindow(config)
 	end
 
 	function Window:LoadTheme(name)
+		if type(readfile) ~= "function" then
+			Library:Notify({Text = "File API not supported", Duration = 3, Icon = "✗"})
+			return
+		end
 		local ok, data = pcall(function()
 			return HttpService:JSONDecode(readfile("ProTheme_" .. name .. ".json"))
 		end)
@@ -415,6 +434,7 @@ function Library:CreateWindow(config)
 		searchBox.Parent = page
 		searchBox.LayoutOrder = -9999
 		Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 4)
+		table.insert(searchBoxes, searchBox)
 
 		local searchActive = false
 		local function filterControls(text)
@@ -794,7 +814,7 @@ function Library:CreateWindow(config)
 						container.Size = open and UDim2.new(1, 0, 0, 35 + h) or UDim2.new(1, 0, 0, 35)
 					end
 				end)
-				register({type = "Dropdown", cont = container, label = label, selLabel = selLabel, dropdown = dropdownFrame})
+				register({type = "Dropdown", cont = container, label = label, selLabel = selLabel, dropdown = dropdownFrame, arrow = arrow})
 			end
 
 			function info:CreateColorPicker(text, default, callback)
@@ -1068,6 +1088,52 @@ function Library:CreateWindow(config)
 		end
 
 		return TabInfo
+	end
+
+	function Window:CreateThemeTab()
+		local ST = self:CreateTab("Settings")
+
+		ST:CreateLabel("Theme Presets")
+		local presetSection = ST:CreateSection("Presets")
+		local presetNames = {"Dark", "Purple", "Red", "Blue", "Green", "Orange"}
+		for _, name in pairs(presetNames) do
+			presetSection:CreateButton(name, function()
+				self:SelectPreset(name)
+				Library:Notify({Text = "Theme: " .. name, Duration = 1.5, Icon = "✓"})
+			end)
+		end
+
+		ST:CreateLabel("Effects")
+		ST:CreateToggle("Rainbow Accent", function(val)
+			self:SetRainbow(val)
+		end)
+
+		ST:CreateLabel("Custom Colors")
+		local colorSec = ST:CreateSection("Colors")
+		local colorKeys = {"Background", "Sidebar", "Text", "Button", "Accent", "ToggleOff", "InputBackground", "ScrollBar"}
+		for _, key in pairs(colorKeys) do
+			colorSec:CreateColorPicker(key, Window.Theme[key], function(color)
+				local upd = {}
+				upd[key] = color
+				self:SetColors(upd)
+			end)
+		end
+
+		ST:CreateLabel("Save / Load")
+		local saveSec = ST:CreateSection("Save & Load")
+		saveSec:CreateTextbox("Save theme as...", function(val)
+			if val and val ~= "" then self:SaveTheme(val) end
+		end)
+		saveSec:CreateTextbox("Load theme...", function(val)
+			if val and val ~= "" then self:LoadTheme(val) end
+		end)
+
+		ST:CreateLabel(" ")
+		ST:CreateButton("Destroy GUI", function()
+			screenGui:Destroy()
+		end)
+
+		return ST
 	end
 
 	return Window
