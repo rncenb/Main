@@ -27,6 +27,7 @@ function Library:CreateWindow(config)
     -- SMOOTH DRAGGING LOGIC
     -- ==========================================
     local UserInputService = game:GetService("UserInputService")
+    local TweenService = game:GetService("TweenService")
     
     local dragging
     local dragInput
@@ -154,6 +155,62 @@ function Library:CreateWindow(config)
             Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6) -- Rounded buttons
             
             btn.MouseButton1Click:Connect(callback)
+        end
+
+        function TabInfo:CreateToggle(toggleText, callback)
+            local container = Instance.new("Frame")
+            container.Size = UDim2.new(1, -20, 0, 35)
+            container.BackgroundColor3 = buttonCol
+            container.Parent = page
+            Instance.new("UICorner", container).CornerRadius = UDim.new(0, 6)
+
+            local label = Instance.new("TextLabel")
+            label.Size = UDim2.new(1, -55, 1, 0)
+            label.Position = UDim2.new(0, 10, 0, 0)
+            label.BackgroundTransparency = 1
+            label.Text = toggleText
+            label.TextColor3 = textCol
+            label.Font = Enum.Font.Gotham
+            label.TextSize = 14
+            label.TextXAlignment = Enum.TextXAlignment.Left
+            label.Parent = container
+
+            local track = Instance.new("Frame")
+            track.Size = UDim2.new(0, 42, 0, 22)
+            track.Position = UDim2.new(1, -52, 0.5, -11)
+            track.BackgroundColor3 = Color3.fromRGB(85, 85, 90)
+            track.BorderSizePixel = 0
+            track.Parent = container
+            Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+            local knob = Instance.new("Frame")
+            knob.Size = UDim2.new(0, 18, 0, 18)
+            knob.Position = UDim2.new(0, 2, 0.5, -9)
+            knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            knob.BorderSizePixel = 0
+            knob.Parent = track
+            Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+            local toggled = false
+            local tweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+            local function updateToggle()
+                if toggled then
+                    TweenService:Create(track, tweenInfo, {BackgroundColor3 = accentCol}):Play()
+                    knob:TweenPosition(UDim2.new(0, 22, 0.5, -9), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+                else
+                    TweenService:Create(track, tweenInfo, {BackgroundColor3 = Color3.fromRGB(85, 85, 90)}):Play()
+                    knob:TweenPosition(UDim2.new(0, 2, 0.5, -9), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.15, true)
+                end
+                callback(toggled)
+            end
+
+            container.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    toggled = not toggled
+                    updateToggle()
+                end
+            end)
         end
         
         return TabInfo
