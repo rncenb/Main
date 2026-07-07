@@ -145,51 +145,89 @@ function Library:CreateWindow(config)
 	mainFrame.ClipsDescendants = true
 	mainFrame.Parent = screenGui
 	Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8)
+	local mainStroke = Instance.new("UIStroke", mainFrame)
+	mainStroke.Color = Color3.fromRGB(50, 50, 55)
+	mainStroke.Transparency = 0.5
 
+	-- Header bar (full width)
+	local header = Instance.new("Frame")
+	header.Size = UDim2.new(1, 0, 0, 36)
+	header.BackgroundColor3 = C.Sidebar
+	header.BorderSizePixel = 0
+	header.Parent = mainFrame
+	local headerDivider = Instance.new("Frame", header)
+	headerDivider.Size = UDim2.new(1, 0, 0, 1)
+	headerDivider.Position = UDim2.new(0, 0, 1, -1)
+	headerDivider.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+	headerDivider.BackgroundTransparency = 0.4
+	headerDivider.BorderSizePixel = 0
+
+	-- Title in header
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -50, 1, 0)
+	title.Position = UDim2.new(0, 12, 0, 0)
+	title.BackgroundTransparency = 1
+	title.Text = "  " .. (config.Title or "Pro Hub")
+	title.TextColor3 = C.Accent
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 15
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Parent = header
+
+	-- Minimize button in header
+	local minimizeBtn = Instance.new("TextButton")
+	minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
+	minimizeBtn.Position = UDim2.new(1, -34, 0, 4)
+	minimizeBtn.BackgroundColor3 = C.Button
+	minimizeBtn.BackgroundTransparency = 0.3
+	minimizeBtn.Text = "─"
+	minimizeBtn.TextColor3 = C.Text
+	minimizeBtn.Font = Enum.Font.Gotham
+	minimizeBtn.TextSize = 18
+	minimizeBtn.Parent = header
+	Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 6)
+	minimizeBtn.MouseEnter:Connect(function()
+		minimizeBtn.BackgroundColor3 = C.Accent
+		minimizeBtn.BackgroundTransparency = 0.2
+	end)
+	minimizeBtn.MouseLeave:Connect(function()
+		minimizeBtn.BackgroundColor3 = C.Button
+		minimizeBtn.BackgroundTransparency = 0.3
+	end)
+
+	-- Sidebar (below header)
 	local sidebar = Instance.new("Frame")
-	sidebar.Size = UDim2.new(0, 130, 1, 0)
+	sidebar.Size = UDim2.new(0, 130, 1, -36)
+	sidebar.Position = UDim2.new(0, 0, 0, 36)
 	sidebar.BackgroundColor3 = C.Sidebar
 	sidebar.BorderSizePixel = 0
 	sidebar.Parent = mainFrame
 
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, 0, 0, 35)
-	title.BackgroundTransparency = 1
-	title.Text = config.Title or "Pro Hub"
-	title.TextColor3 = C.Accent
-	title.Font = Enum.Font.GothamBold
-	title.TextSize = 16
-	title.Parent = sidebar
-
+	-- Tab list in sidebar
 	local tabContainer = Instance.new("Frame")
-	tabContainer.Size = UDim2.new(1, 0, 1, -35)
-	tabContainer.Position = UDim2.new(0, 0, 0, 35)
+	tabContainer.Size = UDim2.new(1, 0, 1, -12)
+	tabContainer.Position = UDim2.new(0, 0, 0, 6)
 	tabContainer.BackgroundTransparency = 1
 	tabContainer.Parent = sidebar
 	Instance.new("UIListLayout", tabContainer).SortOrder = Enum.SortOrder.LayoutOrder
+	Instance.new("UIPadding", tabContainer).PaddingLeft = UDim.new(0, 6)
+	Instance.new("UIPadding", tabContainer).PaddingRight = UDim.new(0, 6)
 
+	-- Content area (below header, right of sidebar)
 	local contentArea = Instance.new("Frame")
-	contentArea.Size = UDim2.new(1, -130, 1, 0)
-	contentArea.Position = UDim2.new(0, 130, 0, 0)
-	contentArea.BackgroundTransparency = 1
+	contentArea.Size = UDim2.new(1, -132, 1, -38)
+	contentArea.Position = UDim2.new(0, 132, 0, 37)
+	contentArea.BackgroundColor3 = C.Background
+	contentArea.BorderSizePixel = 0
 	contentArea.Parent = mainFrame
+	Instance.new("UICorner", contentArea).CornerRadius = UDim.new(0, 6)
+	local contentStroke = Instance.new("UIStroke", contentArea)
+	contentStroke.Color = Color3.fromRGB(50, 50, 55)
+	contentStroke.Transparency = 0.4
 
 	local pagesFolder = Instance.new("Folder")
 	pagesFolder.Name = "Pages"
 	pagesFolder.Parent = contentArea
-
-	-- Minimize
-	local minimizeBtn = Instance.new("TextButton")
-	minimizeBtn.Size = UDim2.new(0, 24, 0, 24)
-	minimizeBtn.Position = UDim2.new(1, -28, 0, 5)
-	minimizeBtn.BackgroundColor3 = C.Button
-	minimizeBtn.BackgroundTransparency = 0.4
-	minimizeBtn.Text = "-"
-	minimizeBtn.TextColor3 = C.Text
-	minimizeBtn.Font = Enum.Font.GothamBold
-	minimizeBtn.TextSize = 18
-	minimizeBtn.Parent = sidebar
-	Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 4)
 
 	-- Dragging
 	local dragging, dragInput, dragStart, startPos
@@ -258,7 +296,7 @@ function Library:CreateWindow(config)
 	-- Minimize toggle
 	minimizeBtn.MouseButton1Click:Connect(function()
 		minimized = not minimized
-		local targetSize = minimized and UDim2.new(0, 480, 0, 35) or originalSize
+		local targetSize = minimized and UDim2.new(0, 480, 0, 36) or originalSize
 		TweenService:Create(mainFrame, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = targetSize}):Play()
 		contentArea.Visible = not minimized
 		minimizeBtn.Text = minimized and "+" or "-"
@@ -267,13 +305,23 @@ function Library:CreateWindow(config)
 	function Window:SetColors(newColors)
 		mergeColors(newColors)
 		mainFrame.BackgroundColor3 = C.Background
+		header.BackgroundColor3 = C.Sidebar
 		sidebar.BackgroundColor3 = C.Sidebar
+		contentArea.BackgroundColor3 = C.Background
 		title.TextColor3 = C.Accent
 		minimizeBtn.TextColor3 = C.Text
+		minimizeBtn.BackgroundColor3 = C.Button
 
 		for _, tb in pairs(tabContainer:GetChildren()) do
 			if tb:IsA("TextButton") then
-				tb.TextColor3 = (tb == activeTabBtn) and C.Accent or C.Text
+				if tb == activeTabBtn then
+					tb.TextColor3 = C.Accent
+					tb.BackgroundColor3 = C.Accent
+					tb.BackgroundTransparency = 0.85
+				else
+					tb.TextColor3 = C.Text
+					tb.BackgroundTransparency = 1
+				end
 			end
 		end
 
@@ -476,12 +524,26 @@ function Library:CreateWindow(config)
 	function Window:CreateTab(tabName)
 		local tabBtn = Instance.new("TextButton")
 		tabBtn.Size = UDim2.new(1, 0, 0, 32)
-		tabBtn.BackgroundTransparency = 1
-		tabBtn.Text = tabName
+		tabBtn.BackgroundColor3 = firstTab and C.Accent or Color3.fromRGB(255, 255, 255)
+		tabBtn.BackgroundTransparency = firstTab and 0.85 or 1
+		tabBtn.Text = "  " .. tabName
 		tabBtn.TextColor3 = firstTab and C.Accent or C.Text
 		tabBtn.Font = Enum.Font.GothamSemibold
-		tabBtn.TextSize = 14
+		tabBtn.TextSize = 13
+		tabBtn.TextXAlignment = Enum.TextXAlignment.Left
 		tabBtn.Parent = tabContainer
+		Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
+		tabBtn.MouseEnter:Connect(function()
+			if tabBtn ~= activeTabBtn then
+				tabBtn.BackgroundTransparency = 0.9
+				tabBtn.BackgroundColor3 = C.Text
+			end
+		end)
+		tabBtn.MouseLeave:Connect(function()
+			if tabBtn ~= activeTabBtn then
+				tabBtn.BackgroundTransparency = 1
+			end
+		end)
 
 		local page, layout, searchBox = makePage(pagesFolder)
 		page.Visible = firstTab
@@ -489,10 +551,15 @@ function Library:CreateWindow(config)
 		tabBtn.MouseButton1Click:Connect(function()
 			for _, child in pairs(pagesFolder:GetChildren()) do child.Visible = false end
 			for _, child in pairs(tabContainer:GetChildren()) do
-				if child:IsA("TextButton") then child.TextColor3 = C.Text end
+				if child:IsA("TextButton") then
+					child.TextColor3 = C.Text
+					child.BackgroundTransparency = 1
+				end
 			end
 			page.Visible = true
 			tabBtn.TextColor3 = C.Accent
+			tabBtn.BackgroundColor3 = C.Accent
+			tabBtn.BackgroundTransparency = 0.85
 			activeTabBtn = tabBtn
 		end)
 
@@ -516,6 +583,14 @@ function Library:CreateWindow(config)
 				btn.TextSize = 14
 				btn.Parent = pageRef
 				Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+				btn.MouseEnter:Connect(function()
+					btn.BackgroundColor3 = C.Accent
+					btn.BackgroundTransparency = 0.7
+				end)
+				btn.MouseLeave:Connect(function()
+					btn.BackgroundColor3 = C.Button
+					btn.BackgroundTransparency = 0
+				end)
 				btn.MouseButton1Click:Connect(callback)
 				register({type = "Button", cont = btn})
 			end
