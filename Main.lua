@@ -23,6 +23,33 @@ function Library:CreateWindow(config)
     mainFrame.Parent = screenGui
     Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 8) -- Rounded edges
     
+    -- Dragging
+    local UserInputService = game:GetService("UserInputService")
+    local dragging, dragStart, startPos
+
+    mainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    mainFrame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            UserInputService.InputChanged:Wait()
+            if dragging then
+                local delta = UserInputService:GetMouseLocation() - dragStart
+                mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end
+    end)
+    
     -- 3. Build the Sidebar
     local sidebar = Instance.new("Frame")
     sidebar.Size = UDim2.new(0, 130, 1, 0)
